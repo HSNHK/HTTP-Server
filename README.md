@@ -1,6 +1,6 @@
 # HTTP Server
-An example of a http server implementation in Python<br>
-This project can also be a very small framework
+An example of a http server implementation in Python.<br>
+This project can also be a very small framework.
 
 # life cycle
 ```
@@ -41,9 +41,12 @@ Header & Cookie
 request.headers
 request.cookies 
 
-request.get_parameter(key, default)
 request.get_header(key, default)
 request.get_cookie(key, default)
+```
+URL
+```python
+request.get_parameter(key, default)
 ```
 Body
 ```python
@@ -64,4 +67,10 @@ Response
 response.send(content, status Code, content Type)
 response.sendJson(content, status Code)
 response.sendJsonString(content, status Code)
+```
+Redirect
+```python
+from http_server.url import Redirect 
+...
+return Redirect("path")
 ```

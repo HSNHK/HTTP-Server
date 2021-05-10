@@ -74,7 +74,7 @@ class WebServer:
                         isvalid_route = True
                         back = route.callback(request,response)
                         if back!=None:
-                            self.__returnHandling(back)
+                            self.__returnHandling(back,response)
                         break
 
                 if isvalid_route==False:
@@ -83,9 +83,9 @@ class WebServer:
         finally:
             client.close()
         
-    def __returnHandling(self,function):
+    def __returnHandling(self,function,response):
         if isinstance(function, Redirect):
-            back.go(response)
+            function.go(response)
         elif isinstance(function, RedirectToFunction):
             self.__redirectToFunction(function, request, response)
 

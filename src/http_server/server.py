@@ -1,3 +1,4 @@
+from http_server.middleware import TimeHeader,RequestInformaion
 from http_server.url import Path,Redirect,RedirectToFunction
 from http_server.response import Response
 from http_server.requests import Requests
@@ -17,6 +18,7 @@ class WebServer:
         self.MAXCONNECTION = maxConnection
         self.route_table = route
         self.DEBUG = DEBUG
+        self.Middlewares = [TimeHeader,RequestInformaion]
         if self.DEBUG:
             self.Log = Log(Name="Server logging", level=self.DEBUG)
         else:
@@ -72,6 +74,9 @@ class WebServer:
                 isvalid_route = False
                 for route in self.route_table:
                     if route.match(request.path):
+                        for middleware in self.Middlewares:
+                            request,response = middleware(request,response)
+                            
                         isvalid_route = True
                         back = route.callback(request, response)
                         if back != None:

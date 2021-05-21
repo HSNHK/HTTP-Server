@@ -74,3 +74,15 @@ from http_server.url import Redirect
 ...
 return Redirect("path")
 ```
+# server
+Middleware
+```python
+def Referer(request: Requests,response: Response):
+    if "Referer" in request.headers:
+        print(request.headers["Referer"])
+    return request,response
+
+server = WebServer(port=8080, route=urlpatterns)
+server.Middlewares.append(Referer)
+server.run()
+```

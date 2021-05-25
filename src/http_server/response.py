@@ -1,6 +1,7 @@
 from socket import socket
 import json
-
+import tqdm
+import os
 
 class Response:
     def __init__(self,client: socket):
@@ -34,16 +35,20 @@ class Response:
             505: "HTTP Version Not Supported"
         }
 
-    def __sendResponse(self,content: str,status: int,contentType: str):
+    def __sendResponse(self,content,status: int,contentType: str):
         response_header = f"HTTP/1.1 {status} {contentType}\r\n"
         response_header += f"Server: simple http web Server\r\n"
         response_header += f"Content-Length: {len(content)}\r\n"
         response_header += f"Connection: close\r\n"
-        response_header += f"{self.__createHeader}"
+        header = self.__createHeader
+        response_header += header if header != None else ""
         response_header += f"Content-Type: {contentType}\r\n\r\n"
         #send header and content
         self.client.send(response_header.encode("utf-8"))
-        self.client.send(content.encode("utf-8"))
+        if isinstance(content,bytes):
+            self.client.send(content)
+        else:
+            self.client.send(content.encode("utf-8"))
 
     @property
     def __createHeader(self) -> str:
@@ -68,7 +73,10 @@ class Response:
     def redirect(self,path: str):
         self.headers["Location"] = path
         self.__sendResponse("", 308, None)
-    
+
+    def sendFile(self,filePath: str, statusCode: int, contentType: str):
+        self.__sendResponse(open(filePath,"rb").read(),statusCode,contentType)
+                
     def notFound(self,message="Not Found"):
         self.__sendResponse(f"<h1>{message}</h1>", 404, "text/html")
 

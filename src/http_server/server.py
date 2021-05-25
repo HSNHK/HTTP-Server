@@ -1,3 +1,4 @@
+from posixpath import split
 from http_server.middleware import TimeHeader,RequestInformaion
 from http_server.url import Path,Redirect,RedirectToFunction
 from http_server.response import Response
@@ -5,9 +6,12 @@ from http_server.requests import Requests
 from http_server.logging import DEBUG
 from http_server.logging import Log
 from datetime import datetime
+import mimetypes
 import threading
 import socket
+import tqdm
 import sys
+import os
 
 
 class WebServer:
@@ -19,6 +23,11 @@ class WebServer:
         self.route_table = route
         self.DEBUG = DEBUG
         self.Middlewares = [TimeHeader,RequestInformaion]
+        self.FileServer = {
+            "status":False,
+            "url":None,
+            "dirPath":None,
+        }
         if self.DEBUG:
             self.Log = Log(Name="Server logging", level=self.DEBUG)
         else:
@@ -68,24 +77,35 @@ class WebServer:
                 if not data:
                     break
                 request = Requests(data.decode())
-                response = Response(client)
-
+                response = Response(client) 
                 self.Log.info(f"The request {addres[0]}:{addres[1]} {request.method} {request.path} {datetime.now()}")
-                isvalid_route = False
-                for route in self.route_table:
-                    if route.match(request.path):
-                        for middleware in self.Middlewares:
-                            request,response = middleware(request,response)
-                            
-                        isvalid_route = True
-                        back = route.callback(request, response)
-                        if back != None:
-                            self.__returnHandling(back, request, response)
-                        break
 
-                if isvalid_route == False:
-                    self.Log.warning(f"path {request.path} not found !!!")
-                    self.not_found(response)
+                if self.FileServer["status"] and self.FileServer["url"] in request.path:
+                    self.Log.info(f"*[File server]* {request.path}")
+                    urlPath = request.path.split(self.FileServer["url"])[-1]
+                    path = os.path.join(os.getcwd(),self.FileServer["dirPath"],urlPath)
+                    fileType = os.path.splitext(urlPath)[1]
+                    
+                    if os.path.exists(path):
+                        response.sendFile(path, 200, mimetypes.types_map[fileType])
+                    else:
+                        response.notFound()
+                else:
+                    isvalid_route = False
+                    for route in self.route_table:
+                        if route.match(request.path):
+                            for middleware in self.Middlewares:
+                                request,response = middleware(request,response)
+                                
+                            isvalid_route = True
+                            back = route.callback(request, response)
+                            if back != None:
+                                self.__returnHandling(back, request, response)
+                            break
+
+                    if isvalid_route == False:
+                        self.Log.warning(f"path {request.path} not found !!!")
+                        response.notFound()
         finally:
             client.close()
         
@@ -100,8 +120,10 @@ class WebServer:
             if path.name == function.name:
                 path.callback(request, response)
 
-    def not_found(self,response: Response):
-        response.notFound()
-
-    def internal_error(self,response: Response):
-        response.internalServerError()
+    def fileServer(self,url: str, dirPath: str):
+        self.FileServer = {
+            "status" : True,
+            "url" : url,
+            "dirPath" : dirPath,
+        }
+        self.Log.info(f"file server {url} | {dirPath}")

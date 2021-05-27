@@ -86,3 +86,9 @@ server = WebServer(port=8080, route=urlpatterns)
 server.Middlewares.append(Referer)
 server.run()
 ```
+File Server
+```python
+server.fileServer(URL, Folder path)
+#example
+server.fileServer("/media/","./media")
+```

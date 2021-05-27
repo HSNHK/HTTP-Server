@@ -18,4 +18,5 @@ urlpatterns = [
 ]
 
 server = WebServer(port=8080, route=urlpatterns)
+server.fileServer("/media/","./media")
 server.run()

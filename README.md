@@ -1,4 +1,10 @@
-# HTTP Server
+# HTTP Server [![HSNHK - HTTP-Server](https://img.shields.io/static/v1?label=HSNHK&message=HTTP-Server&color=blue&logo=github)](https://github.com/HSNHK/HTTP-Server)
+[![stars - HTTP-Server](https://img.shields.io/github/stars/HSNHK/HTTP-Server?style=social)](https://github.com/HSNHK/HTTP-Server)
+[![forks - HTTP-Server](https://img.shields.io/github/forks/HSNHK/HTTP-Server?style=social)](https://github.com/HSNHK/HTTP-Server)
+[![GitHub release](https://img.shields.io/github/release/HSNHK/HTTP-Server?include_prereleases=&sort=semver)](https://github.com/HSNHK/HTTP-Server/releases/)
+[![License](https://img.shields.io/badge/License-_GPL--3.0_License-blue)](#license)
+[![issues - HTTP-Server](https://img.shields.io/github/issues/HSNHK/HTTP-Server)](https://github.com/HSNHK/HTTP-Server/issues)
+
 An example of a http server implementation in Python.<br>
 This project can also be a very small framework.
 
@@ -92,3 +98,5 @@ server.fileServer(URL, Folder path)
 #example
 server.fileServer("/media/","./media")
 ```
+## License
+Released under [ GPL-3.0 License](/LICENSE) by [@HSNHK](https://github.com/HSNHK).

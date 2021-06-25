@@ -1,4 +1,3 @@
-from posixpath import split
 from http_server.middleware import TimeHeader,RequestInformaion
 from http_server.url import Path,Redirect,RedirectToFunction
 from http_server.response import Response
@@ -9,7 +8,6 @@ from datetime import datetime
 import mimetypes
 import threading
 import socket
-import tqdm
 import sys
 import os
 
@@ -17,21 +15,21 @@ import os
 class WebServer:
     RouteTableType = list[Path]
     def __init__(self,host="127.0.0.1",port=8080,route=RouteTableType,DEBUG=False,maxConnection=10):
-        self.HOST = host
-        self.PORT = port
-        self.MAXCONNECTION = maxConnection
-        self.route_table = route
-        self.DEBUG = DEBUG
-        self.Middlewares = [TimeHeader,RequestInformaion]
-        self.FileServer = {
+        self.HOST: str = host
+        self.PORT: int = port
+        self.MAXCONNECTION: int = maxConnection
+        self.route_table: RouteTableType = route
+        self.DEBUG: bool = DEBUG
+        self.Middlewares: list = [TimeHeader,RequestInformaion]
+        self.FileServer: dict = {
             "status":False,
             "url":None,
             "dirPath":None,
         }
         if self.DEBUG:
-            self.Log = Log(Name="Server logging", level=self.DEBUG)
+            self.Log: Log = Log(Name="Server logging", level=self.DEBUG)
         else:
-            self.Log = Log("Server logging")
+            self.Log: Log = Log("Server logging")
         
     def __banner(self):
         print("Server is starting up" 
@@ -43,7 +41,7 @@ class WebServer:
         f"\ndebug mode : {self.DEBUG}")
 
     def run(self):
-        self.socket=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket: socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__banner()
         try:
             self.socket.bind((self.HOST, self.PORT))
@@ -70,28 +68,28 @@ class WebServer:
 
     def __handling(self,client: socket.socket,addres: tuple):
         try:
-            PACKET_SIZE = 2024
+            PACKET_SIZE: int = 2024
             while True:
-                data = client.recv(PACKET_SIZE)
+                data: bytes = client.recv(PACKET_SIZE)
 
                 if not data:
                     break
-                request = Requests(data.decode())
-                response = Response(client) 
+                request: Request = Requests(data.decode())
+                response: Response = Response(client) 
                 self.Log.info(f"The request {addres[0]}:{addres[1]} {request.method} {request.path} {datetime.now()}")
 
                 if self.FileServer["status"] and self.FileServer["url"] in request.path:
                     self.Log.info(f"*[File server]* {request.path}")
-                    urlPath = request.path.split(self.FileServer["url"])[-1]
-                    path = os.path.join(os.getcwd(),self.FileServer["dirPath"],urlPath)
-                    fileType = os.path.splitext(urlPath)[1]
-                    
+                    urlFilePath: str = request.path.split(self.FileServer["url"])[-1]
+                    path: str = os.path.join(os.getcwd(),self.FileServer["dirPath"], urlFilePath)
+                    fileType: str = os.path.splitext(urlFilePath)[1]
+
                     if os.path.exists(path):
                         response.sendFile(path, 200, mimetypes.types_map[fileType])
                     else:
                         response.notFound()
                 else:
-                    isvalid_route = False
+                    isvalid_route: bool = False
                     for route in self.route_table:
                         if route.match(request.path):
                             for middleware in self.Middlewares:
@@ -127,3 +125,4 @@ class WebServer:
             "dirPath" : dirPath,
         }
         self.Log.info(f"file server {url} | {dirPath}")
+

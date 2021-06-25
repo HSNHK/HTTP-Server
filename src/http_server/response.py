@@ -1,16 +1,17 @@
 from socket import socket
 import json
-import tqdm
 import os
 
 class Response:
     def __init__(self,client: socket):
-        self.client = client
+        self.client: socket = client
 
-        self.headers = dict()
-        self.cookies = dict()
+        self.headers: dict = {}
+        self.cookies: dict = {}
 
-        self.__statusCode = {
+        self.BUFFER_SIZE: int = 1024 # send 1024 bytes each time step
+
+        self.__statusCode: dict = {
             200: "OK",
             201: "Created",
             202: "Accepted",
@@ -35,15 +36,18 @@ class Response:
             505: "HTTP Version Not Supported"
         }
 
-    def __sendResponse(self,content,status: int,contentType: str):
-        response_header = f"HTTP/1.1 {status} {contentType}\r\n"
+    def __header(self, statusCode: int, contentType: str, length: int) -> str:
+        response_header: str = f"HTTP/1.1 {statusCode} {contentType}\r\n"
         response_header += f"Server: simple http web Server\r\n"
-        response_header += f"Content-Length: {len(content)}\r\n"
+        response_header += f"Content-Length: {length}\r\n"
         response_header += f"Connection: close\r\n"
-        header = self.__createHeader
+        header: str = self.__createHeader
         response_header += header if header != None else ""
         response_header += f"Content-Type: {contentType}\r\n\r\n"
-        #send header and content
+        return response_header
+
+    def __sendResponse(self, content, status: int, contentType: str):
+        response_header = self.__header(status, contentType, len(content))
         self.client.send(response_header.encode("utf-8"))
         if isinstance(content,bytes):
             self.client.send(content)
@@ -55,9 +59,9 @@ class Response:
         if len(self.headers)<1 and len(self.cookies)<1:
             return None
 
-        header_items = "\r\n".join(f"{item[0]}:{item[1]}" for item in self.headers.items())
+        header_items: str = "\r\n".join(f"{item[0]}:{item[1]}" for item in self.headers.items())
 
-        cookie_items = f"set-cookie:"+";".join(f"{item[0]}={item[1]}" for item in self.cookies.items())
+        cookie_items: str = f"set-cookie:"+";".join(f"{item[0]}={item[1]}" for item in self.cookies.items())
 
         return f"{header_items}\r\n{cookie_items}\r\n"
     
@@ -74,8 +78,24 @@ class Response:
         self.headers["Location"] = path
         self.__sendResponse("", 308, None)
 
-    def sendFile(self,filePath: str, statusCode: int, contentType: str):
-        self.__sendResponse(open(filePath,"rb").read(),statusCode,contentType)
+    def sendFile(self,filePath: str,statusCode: int,contentType: str):
+        fileSize: bytes = os.path.getsize(filePath)
+        if fileSize >= 1000:
+            fileSize = fileSize >> 10 # kilobytes (kB)
+        elif fileSize >= 1000**2:
+            fileSize = fileSize >> 20 # megabyte (MB)
+        elif fileSize >= 1000**3:
+            fileSize = fileSize >> 30 # gigabyte (GB)
+        
+        response_header: str = self.__header(statusCode, contentType, fileSize)
+        self.client.send(response_header.encode("utf-8"))
+
+        with open(filePath, "rb") as file:
+            while True:
+                bytes_read = file.read(self.BUFFER_SIZE)
+                if not bytes_read:
+                    break
+                self.client.sendall(bytes_read)
                 
     def notFound(self,message="Not Found"):
         self.__sendResponse(f"<h1>{message}</h1>", 404, "text/html")
